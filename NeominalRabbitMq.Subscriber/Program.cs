@@ -8,6 +8,8 @@ using System.Text;
 
 
 
+
+
     var factory = new ConnectionFactory();
     factory.Uri = new Uri("amqps://qosgqhkq:b-jNboVWOOVgxSzmWKL36oCE7qLX51vg@sparrow.rmq.cloudamqp.com/qosgqhkq");
 
@@ -22,17 +24,17 @@ using System.Text;
 
 // var randomQueueName = channel.QueueDeclare().QueueName; // random kuyruk
 
-var randomQueueName = "log-database-save"; // kalıcı kuyruğu random veremeyiz.
+   var QueueName = "direct-queue-Critical"; // kalıcı kuyruğu random veremeyiz.
 
-   channel.QueueDeclare(randomQueueName, durable: true, exclusive: false, autoDelete: false); // exclusive başka kanallardan bu kuyruğa bağlanılsın mı, durable true sabit diske kaydedilsin. Eğer Kuyruğu declare edersek kalıcı olur.
+ 
 
-    channel.QueueBind(randomQueueName, exchange: "logs-fanout", "", null);  // eğer kuyruk declare etseydik kuyruk ilgili instance kapansa dahi bu kuyruk duracaktır. ama bind işlemi sayesinde kuyruk. consumer down olduğunda ilgili kuyruk silinecek. eğer kuyruk declare etseydik o zaman kuyruk silinmeyecekti. o yüzden ilgili consumer down olsa bile bu kuyruk durur.
+    channel.QueueBind(QueueName, exchange: "logs-direct", "route-Critical", null); 
 
     channel.BasicQos(0,1 ,false); // 1 er 1 er dağıtım local dağıtım.
 
     var consumer = new EventingBasicConsumer(channel); // bu kanal üzerinden consumer oluşturduk.
 
-    channel.BasicConsume(randomQueueName,false, consumer); // autoAct false yaparsak mesajı kuyruktan silmek için biz bir işlem yapacağız.                                                     
+    channel.BasicConsume(QueueName, false, consumer); // autoAct false yaparsak mesajı kuyruktan silmek için biz bir işlem yapacağız.                                                     
 
     // mesaj iletildiğinde çalışacak olan event.
     consumer.Received += (object? sender, BasicDeliverEventArgs e) =>
