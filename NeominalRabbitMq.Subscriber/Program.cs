@@ -20,11 +20,15 @@ using System.Text;
 
     var channel = cnn.CreateModel();
 
-    var randomQueueName = channel.QueueDeclare().QueueName; // random kuyruk
+// var randomQueueName = channel.QueueDeclare().QueueName; // random kuyruk
+
+var randomQueueName = "log-database-save"; // kalıcı kuyruğu random veremeyiz.
+
+   channel.QueueDeclare(randomQueueName, durable: true, exclusive: false, autoDelete: false); // exclusive başka kanallardan bu kuyruğa bağlanılsın mı, durable true sabit diske kaydedilsin. Eğer Kuyruğu declare edersek kalıcı olur.
 
     channel.QueueBind(randomQueueName, exchange: "logs-fanout", "", null);  // eğer kuyruk declare etseydik kuyruk ilgili instance kapansa dahi bu kuyruk duracaktır. ama bind işlemi sayesinde kuyruk. consumer down olduğunda ilgili kuyruk silinecek. eğer kuyruk declare etseydik o zaman kuyruk silinmeyecekti. o yüzden ilgili consumer down olsa bile bu kuyruk durur.
 
-    channel.BasicQos(0,2 ,false); 
+    channel.BasicQos(0,1 ,false); // 1 er 1 er dağıtım local dağıtım.
 
     var consumer = new EventingBasicConsumer(channel); // bu kanal üzerinden consumer oluşturduk.
 
