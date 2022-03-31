@@ -14,18 +14,21 @@ using System.Text;
 
     using var cnn = factory.CreateConnection(); // connection açtık
 
-    var channel = cnn.CreateModel(); // kanal açtık
-    // durable önemli fiziki olarak mesaj kaybolmasın persistant yaptık. false in-memory
-    // exclusive burada oluşan kanal üzerinden sadece erişebilirim fakat subscriber farklı kanaldan bağlantı kurulacaktır.
-    // işlem bitince kuyruğu otomatik silmesin. en son kalan subscriber da işini bittikten sonra kuyruğu siler.
-    // channel.QueueDeclare("test-queue", durable: true, exclusive: false, autoDelete: false); // kuyruk tanımı
-    // eğer publisher bu kuruğu oluşturmuş ise bundan eminsek bunu tekrar declare etmeye gerek yok. fakat publisher bu kuyruğu oluşturmamış ise o zaman subscriber bu kuyruğu oluşturur. channel.QueueDeclare için aynı parametrelerin olmasına dikkat edelim.
+    // random kuyruk oluşturma
 
-    channel.BasicQos(0,2 ,false); // global değeri true yaparsak kaç tane subscriber var tek bir seferde tüm subscriberlara 5 adet dağıtacak şekilde global olarak ayarlar. her bir subcriber için kaç adet gönderileceğini false diyerek belirttik.
+
+
+    var channel = cnn.CreateModel();
+
+    var randomQueueName = channel.QueueDeclare().QueueName; // random kuyruk
+
+    channel.QueueBind(randomQueueName, exchange: "logs-fanout", "", null);  // eğer kuyruk declare etseydik kuyruk ilgili instance kapansa dahi bu kuyruk duracaktır. ama bind işlemi sayesinde kuyruk. consumer down olduğunda ilgili kuyruk silinecek. eğer kuyruk declare etseydik o zaman kuyruk silinmeyecekti. o yüzden ilgili consumer down olsa bile bu kuyruk durur.
+
+    channel.BasicQos(0,2 ,false); 
 
     var consumer = new EventingBasicConsumer(channel); // bu kanal üzerinden consumer oluşturduk.
 
-    channel.BasicConsume("test-queue",false, consumer); // autoAct false yaparsak mesajı kuyruktan silmek için biz bir işlem yapacağız.                                                     
+    channel.BasicConsume(randomQueueName,false, consumer); // autoAct false yaparsak mesajı kuyruktan silmek için biz bir işlem yapacağız.                                                     
 
     // mesaj iletildiğinde çalışacak olan event.
     consumer.Received += (object? sender, BasicDeliverEventArgs e) =>
