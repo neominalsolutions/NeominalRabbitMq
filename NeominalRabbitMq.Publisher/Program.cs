@@ -1,7 +1,11 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 
+using MessageBus;
+using MessageBus.Messages;
+using Newtonsoft.Json;
 using RabbitMQ.Client;
+using System;
 using System.Text;
 
 var factory = new ConnectionFactory();
@@ -18,26 +22,26 @@ using (var cnn = factory.CreateConnection()) // connection açtık
     // işlem bitince kuyruğu otomatik silmesin. en son kalan subscriber da işini bittikten sonra kuyruğu siler.
     channel.QueueDeclare("test-queue",durable:true, exclusive:false,autoDelete:false);
    
-    
+   
+         var message = new OrderCreateCommand();
+
+         var json = JsonConvert.SerializeObject(message);
+
+         var messageBody = Encoding.UTF8.GetBytes(json);
+
+        Console.WriteLine($"my-message {message}");
 
 
-    Enumerable.Range(1, 10).ToList().ForEach(x =>
-     {
-         string message = $"Test-{x}"; // byte[] olarak verileri gönderebiliryoruz bu sebeple istediğimiz herşeyi gönderebiliriz.
-         var messageBody = Encoding.UTF8.GetBytes(message);
-         
+    // public abstract string Type { get; set; }
 
-         Thread.Sleep(1000);
-         channel.BasicPublish(string.Empty, "test-queue", null, messageBody); // exchange kullanmadığımız işleme default exchange denir.
-
-
-         Console.WriteLine($"Mesaj gönderildi {x}");
-
-     });
+       var props = channel.CreateBasicProperties();
+    props.Type = message.GetType().FullName;
+ 
 
 
 
-    Console.ReadKey();
+
+        channel.BasicPublish(string.Empty, "test-queue", props, messageBody); 
 
 }
 

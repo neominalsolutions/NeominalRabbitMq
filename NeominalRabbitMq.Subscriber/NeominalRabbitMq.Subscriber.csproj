@@ -9,6 +9,21 @@
 
   <ItemGroup>
     <PackageReference Include="RabbitMQ.Client" Version="6.2.4" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="BackgroundServices\" />
+    <None Remove="Microsoft.Extensions.Hosting" />
+    <None Remove="Consumers\" />
+    <None Remove="Newtonsoft.Json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="BackgroundServices\" />
+    <Folder Include="Consumers\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MessageBus\MessageBus.csproj" />
+  </ItemGroup>
 </Project>

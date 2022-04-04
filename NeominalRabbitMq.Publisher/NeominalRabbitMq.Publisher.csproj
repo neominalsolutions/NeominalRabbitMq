@@ -9,6 +9,13 @@
 
   <ItemGroup>
     <PackageReference Include="RabbitMQ.Client" Version="6.2.4" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MessageBus\MessageBus.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Newtonsoft.Json" />
+  </ItemGroup>
 </Project>

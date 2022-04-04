@@ -1,50 +1,49 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using NeominalRabbitMq.Subscriber.BackgroundServices;
+using NeominalRabbitMq.Subscriber.Consumers;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using System;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 
 
 
 
-    var factory = new ConnectionFactory();
-    factory.Uri = new Uri("amqps://qosgqhkq:b-jNboVWOOVgxSzmWKL36oCE7qLX51vg@sparrow.rmq.cloudamqp.com/qosgqhkq");
 
-
-    using var cnn = factory.CreateConnection(); // connection açtık
-
-    var channel = cnn.CreateModel(); // kanal açtık
-    // durable önemli fiziki olarak mesaj kaybolmasın persistant yaptık. false in-memory
-    // exclusive burada oluşan kanal üzerinden sadece erişebilirim fakat subscriber farklı kanaldan bağlantı kurulacaktır.
-    // işlem bitince kuyruğu otomatik silmesin. en son kalan subscriber da işini bittikten sonra kuyruğu siler.
-    // channel.QueueDeclare("test-queue", durable: true, exclusive: false, autoDelete: false); // kuyruk tanımı
-    // eğer publisher bu kuruğu oluşturmuş ise bundan eminsek bunu tekrar declare etmeye gerek yok. fakat publisher bu kuyruğu oluşturmamış ise o zaman subscriber bu kuyruğu oluşturur. channel.QueueDeclare için aynı parametrelerin olmasına dikkat edelim.
-
-    channel.BasicQos(0,2 ,false); // global değeri true yaparsak kaç tane subscriber var tek bir seferde tüm subscriberlara 5 adet dağıtacak şekilde global olarak ayarlar. her bir subcriber için kaç adet gönderileceğini false diyerek belirttik.
-
-    var consumer = new EventingBasicConsumer(channel); // bu kanal üzerinden consumer oluşturduk.
-
-    channel.BasicConsume("test-queue",false, consumer); // autoAct false yaparsak mesajı kuyruktan silmek için biz bir işlem yapacağız.                                                     
-
-    // mesaj iletildiğinde çalışacak olan event.
-    consumer.Received += (object? sender, BasicDeliverEventArgs e) =>
+public static class Program
+{
+    public static async Task Main(string[] args)
     {
-       
-        var message = Encoding.UTF8.GetString(e.Body.ToArray()); // byte[] olan mesajı oku
-        Console.WriteLine("Gelen Mesaj :" + message);
-        Thread.Sleep(1000);
+        await CreateHostBuilder(args).RunConsoleAsync();
+    }
 
-        channel.BasicAck(e.DeliveryTag, false); // kendimiz tek tek sileriz. rabbitmq haberdar ederiz.
-        // Direkt olarak kuyruğa gönderirsek bu default exchange denk gelir.
+    private static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .UseConsoleLifetime()
+            .ConfigureServices((hostContext, services) =>
+            {
 
+                Assembly.GetExecutingAssembly()
+    .GetTypes()
+    .Where(a => a.Name.EndsWith("Consumer") && !a.IsAbstract && !a.IsInterface)
+    .Select(a => new { assignedType = a, serviceTypes = a.GetInterfaces().ToList() })
+    .ToList()
+    .ForEach(typesToRegister =>
+    {
+        typesToRegister.serviceTypes.ForEach(typeToRegister => services.AddScoped(typeToRegister, typesToRegister.assignedType));
+    });
 
-        //channel.BasicAck(e.DeliveryTag,multiple:false); // multiple true dersek o anda ramde işlemiş mesajlarıda rabbitmq bildirir. false dersek tek tek iletildiğinde o zaman rabbitmq haberdar edilir ve silinmiş olur.  
-    };
+                // services.AddScoped<MyTestConsumer>();
 
-Console.ReadLine();
+                services.AddHostedService<MessageSubscriberBackgroundService>();
+                services.AddSingleton(Console.Out);
+               
+            });
+}
 
-
-
-//Console.WriteLine("Hello, World!");
-//Console.ReadKey();
