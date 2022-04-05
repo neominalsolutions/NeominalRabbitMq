@@ -23,7 +23,7 @@ using (var cnn = factory.CreateConnection()) // connection açtık
     channel.QueueDeclare("test-queue",durable:true, exclusive:false,autoDelete:false);
    
    
-         var message = new OrderCreateCommand();
+         var message = new OrderCreateCommand(orderId:Guid.NewGuid().ToString());
 
          var json = JsonConvert.SerializeObject(message);
 
@@ -36,6 +36,7 @@ using (var cnn = factory.CreateConnection()) // connection açtık
 
        var props = channel.CreateBasicProperties();
     props.Type = message.GetType().FullName;
+   
  
 
 

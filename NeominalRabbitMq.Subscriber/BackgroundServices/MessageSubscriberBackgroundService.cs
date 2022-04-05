@@ -64,25 +64,12 @@ namespace NeominalRabbitMq.Subscriber.BackgroundServices
                 {
 
                     Assembly assembly = typeof(BaseMessage).Assembly;
-                    Type? @type = assembly.GetType(e.BasicProperties.Type);
-            
-
-                    // e.BasicProperties.CorrelationId
-
+                    Type? messageType = assembly.GetType(e.BasicProperties.Type);
+           
                     var message = Encoding.UTF8.GetString(e.Body.ToArray());
+                    var messageInstance = JsonConvert.DeserializeObject(message,messageType);
 
-                    // buradaki kodu gelen tipe göre çevirmek lazım.
-
-                    //var @eventMessage = JsonConvert.DeserializeObject(message);
-                    var @eventMessage = JsonConvert.DeserializeObject<OrderCreateCommand>(message);
-                    //var @eventMessage = JsonConvert.DeserializeObject<OrderCreateCommand>(message);
-
-                    //DispatchEvent(@eventMessage,@type);
-
-                    DispatchEvent(@eventMessage);
-
-
-
+                    DispatchEvent(messageInstance, messageType);
                     Console.Write($"message listening...{message}");
 
                     _channel.BasicAck(e.DeliveryTag, false);
@@ -107,33 +94,31 @@ namespace NeominalRabbitMq.Subscriber.BackgroundServices
 
         // 
        
-        private  void DispatchEvent<TEvent>(TEvent @event) 
+        private  void DispatchEvent(object messageInstance, Type messageType) 
         {
             
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
 
-                var handlerType = typeof(IConsumer<>).MakeGenericType(@event.GetType());
+                var handlerType = typeof(IConsumer<>).MakeGenericType(messageType);
                 // bir event birden fazla Handler çalıştırabilir.
                 var handlersCollectionType = typeof(IEnumerable<>).MakeGenericType(handlerType);
 
                 try
                 {
-                    //c# 4.0 ile dynamic geldi.
-                    //c# 4.0 ile dynamic geldi.
                     dynamic handlers = _serviceProvider.GetRequiredService(handlersCollectionType);
-                    // dynamic handler da bir hatamız var.
-
 
                     if (handlers == null)
                         return;
 
                     foreach (var handler in handlers)
                     {
-                        var dynamicEvent = @event;
-                        handler.Handle(@event);
-                        //handler.GetMethod("Handle").Invoke(handler, new object[] { @event });
+
+                        object? handlerInstance = _serviceProvider.GetService(handlerType);
+
+                        var method = handlerType.GetMethod("Handle");
+                        method?.Invoke(handlerInstance, new object[] { messageInstance });
 
                     }
                 }

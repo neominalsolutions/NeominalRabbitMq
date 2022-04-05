@@ -1,13 +1,18 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 namespace MessageBus.Messages
 {
 	public class OrderCreateCommand : BaseMessage
 	{
-		public OrderCreateCommand()
+	
+
+		[JsonConstructor]
+        public OrderCreateCommand(string orderId)
 		{
+			OrderId = orderId;
 		}
 
-		public string OrderId { get; set; }
+		public string OrderId { get; private set; }
 
 	}
 }
