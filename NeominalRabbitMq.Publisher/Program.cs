@@ -1,11 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-
-using MessageBus;
 using MessageBus.Messages;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
-using System;
 using System.Text;
 
 var factory = new ConnectionFactory();
@@ -16,35 +13,26 @@ factory.Uri = new Uri("amqps://qosgqhkq:b-jNboVWOOVgxSzmWKL36oCE7qLX51vg@sparrow
 
 using (var cnn = factory.CreateConnection()) // connection açtık
 {
-    var channel = cnn.CreateModel(); // kanal açtık
-    // durable önemli fiziki olarak mesaj kaybolmasın persistant yaptık. false in-memory
-    // exclusive burada oluşan kanal üzerinden sadece erişebilirim fakat subscriber farklı kanaldan bağlantı kurulacaktır.
-    // işlem bitince kuyruğu otomatik silmesin. en son kalan subscriber da işini bittikten sonra kuyruğu siler.
-    channel.QueueDeclare("test-queue",durable:true, exclusive:false,autoDelete:false);
-   
-   
-         var message = new OrderCreateCommand(orderId:Guid.NewGuid().ToString());
+  var channel = cnn.CreateModel(); // kanal açtık
+                                   // durable önemli fiziki olarak mesaj kaybolmasın persistant yaptık. false in-memory
+                                   // exclusive burada oluşan kanal üzerinden sadece erişebilir. fakat consumerlar farklı kanaldan bağlantı kurulacaktır.
+                                   // işlem bitince kuyruğu otomatik silmesin. en son kalan subscriber da işini bittikten sonra kuyruğu siler.
+  channel.QueueDeclare("test-queue", durable: true, exclusive: false, autoDelete: false);
 
-         var json = JsonConvert.SerializeObject(message);
+  var message = new OrderCreateCommand(orderId: Guid.NewGuid().ToString());
 
-         var messageBody = Encoding.UTF8.GetBytes(json);
+  var json = JsonConvert.SerializeObject(message);
 
-        Console.WriteLine($"my-message {message}");
+  var messageBody = Encoding.UTF8.GetBytes(json);
 
+  Console.WriteLine($"my-message {message}");
 
-    // public abstract string Type { get; set; }
+  // mesaj kanalından property vasıtası ile veri taşımak için
 
-       var props = channel.CreateBasicProperties();
-    props.Type = message.GetType().FullName;
-   
- 
+  var props = channel.CreateBasicProperties();
+  props.Type = message.GetType().FullName;
 
-
-
-
-        channel.BasicPublish(string.Empty, "test-queue", props, messageBody); 
-
+  channel.BasicPublish(string.Empty, "test-queue", props, messageBody);
 }
-
 
 Console.WriteLine("Hello, World!");

@@ -1,11 +1,7 @@
-﻿using System;
-namespace MessageBus
+﻿namespace MessageBus
 {
-	
-	public interface IConsumer<TMessage> where TMessage : BaseMessage
-	{
-			void Handle(TMessage message);
-	}
-	
+  public interface IConsumer<TMessage> where TMessage : BaseMessage
+  {
+    void Handle(TMessage message);
+  }
 }
-
