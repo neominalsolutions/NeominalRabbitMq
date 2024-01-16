@@ -6,7 +6,7 @@ using RabbitMQ.Client;
 using System.Text;
 
 var factory = new ConnectionFactory();
-factory.Uri = new Uri("amqps://qosgqhkq:b-jNboVWOOVgxSzmWKL36oCE7qLX51vg@sparrow.rmq.cloudamqp.com/qosgqhkq");
+factory.Uri = new Uri("amqp://guest:guest@localhost:5672//");
 
 // publisher mesajı gönderdiğinde subscriberlar tarafından doğru işlendiğinde ilgili mesajı silme işlemi yapıp. Daha güvenli bir şekilde mesajları işleyebiliriz.
 // Kuyrukta 10 adet mesaj var tek bir seferde kaçar kaçar mesaj göndereceğiz kısmını halledeceğiz. Tek seferde 10'ar mesaj alsın diyebiliriz. Her subscriber tek seferde 10 mesaj gönder dilebiliriz. Mesaj işlenme süresi uzun ise her subscriber 1 yada 2 tane gönderilmesi uygun olacaktır.

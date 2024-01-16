@@ -23,7 +23,7 @@ namespace NeominalRabbitMq.Subscriber.BackgroundServices
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
       var factory = new ConnectionFactory();
-      factory.Uri = new Uri("amqps://qosgqhkq:b-jNboVWOOVgxSzmWKL36oCE7qLX51vg@sparrow.rmq.cloudamqp.com/qosgqhkq");
+      factory.Uri = new Uri("amqp://guest:guest@localhost:5672//");
 
       _connection = factory.CreateConnection(); // connection açtık
 
@@ -49,13 +49,14 @@ namespace NeominalRabbitMq.Subscriber.BackgroundServices
           DispatchEvent(messageInstance, messageType);
           Console.Write($"message listening...{message}");
 
+
           _channel.BasicAck(e.DeliveryTag, false);
         }
       };
 
       return Task.CompletedTask;
     }
-
+    
     public override void Dispose()
     {
       _channel.Close();
